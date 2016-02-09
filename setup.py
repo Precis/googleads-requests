@@ -9,7 +9,7 @@ setup(
     version=__version__,
     packages=find_packages(),
     install_requires=['requests', 'googleads'],
-    dependency_links=['git+https://github.com/Precis/googleads-python-lib.git@precis#egg=googleads'],
+    dependency_links=['git+https://github.com/Precis/googleads-python-lib.git@precis-2#egg=googleads-precis'],
     url='https://github.com/Precis/googleads-requests',
     license='MIT',
     author='Matthias Erll',
