@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 import requests
+import suds
 
 try:
     from xml.etree import cElementTree as ET
 except ImportError:
     from xml.etree import ElementTree as ET
 
-from googleads.adwords import (ReportDownloaderBase, _SERVICE_MAP, _DEFAULT_ENDPOINT, _REPORT_HEADER_KWARGS,
+from googleads.adwords import (ReportDownloader, _SERVICE_MAP, _DEFAULT_ENDPOINT, _REPORT_HEADER_KWARGS,
                                BatchJobHelper)
 from googleads.common import GenerateLibSig
-from googleads.dfp import DataDownloaderBase
+from googleads.dfp import DataDownloader
 from googleads.errors import (GoogleAdsValueError, AdWordsReportBadRequestError, AdWordsReportError,
                               AdWordsBatchJobServiceInvalidOperationError)
 
@@ -159,11 +160,11 @@ class AdwordsBatchJobHelper(BatchJobHelper):
         uploader.UploadOperations(operations, is_last=True)
 
 
-class AdwordsReportDownloader(ReportDownloaderBase):
+class AdwordsReportDownloader(ReportDownloader):
     chunk_size = 8192
 
-    def __init__(self, adwords_client, version=sorted(_SERVICE_MAP.keys())[-1], server=_DEFAULT_ENDPOINT):
-        super(AdwordsReportDownloader, self).__init__(adwords_client, version=version, server=server)
+    def __init__(self, adwords_client, version):
+        super(AdwordsReportDownloader, self).__init__(adwords_client, version)
         self._session = requests.Session()
         if self._adwords_client.https_proxy:
             self._session.proxies = {'https': self._adwords_client.https_proxy}
@@ -185,7 +186,13 @@ class AdwordsReportDownloader(ReportDownloaderBase):
         response.raise_for_status()
         return response
 
-    def _DownloadReport(self, post_body, output, kwargs):
+    def DownloadReportAsString(self, report_definition, **kwargs):
+        return self._post(self._SerializeReportDefinition(report_definition), kwargs).text
+
+    def DownloadReportAsStringWithAwql(self, query, file_format, **kwargs):
+        return self._post(self._SerializeAwql(query, file_format), kwargs).text
+
+    def _DownloadReport(self, post_body, output, **kwargs):
         response = self._post(post_body, kwargs, stream=True)
         try:
             for buf in response.iter_content(self.chunk_size):
@@ -194,14 +201,20 @@ class AdwordsReportDownloader(ReportDownloaderBase):
         finally:
             response.close()
 
-    def _DownloadReportAsString(self, post_body, kwargs):
-        return self._post(post_body, kwargs).text
-
-    def _DownloadReportAsStream(self, post_body, kwargs):
+    def _DownloadReportAsStream(self, post_body, **kwargs):
         return self._post(post_body, kwargs, stream=True)
 
+    def _SerializeAwql(self, query, file_format):
+        return {'__fmt': file_format, '__rdquery': query}
 
-class DfpDataDownloader(DataDownloaderBase):
+    def _SerializeReportDefinition(self, report_definition):
+        content = suds.mx.Content(
+            tag=self._REPORT_DEFINITION_NAME, value=report_definition,
+            name=self._REPORT_DEFINITION_NAME, type=self._report_definition_type)
+        return {'__rdxml': self._marshaller.process(content).plain()}
+
+
+class DfpDataDownloader(DataDownloader):
     chunk_size = 8192
 
     def DownloadReportToFile(self, report_job_id, export_format, outfile):
