@@ -170,12 +170,12 @@ class AdwordsReportDownloader(ReportDownloaderBase):
         self._session.headers = {
             'Content-type': DOWNLOADER_CONTENT_TYPE,
             'developerToken': self._adwords_client.developer_token,
-            'clientCustomerId': self._adwords_client.client_customer_id,
             'User-Agent': '{0}_{1},gzip'.format(self._adwords_client.user_agent, LIB_SIGNATURE),
         }
 
     def _post(self, post_body, kwargs, stream=False):
         headers = self._adwords_client.oauth2_client.CreateHttpHeader()
+        headers['clientCustomerId'] = kwargs.get('client_customer_id', self._adwords_client.client_customer_id)
         headers.update(get_report_headers(kwargs))
         response = self._session.post(self._end_point, data=post_body, headers=headers, stream=stream)
         if response.status_code >= 400 < 500:
