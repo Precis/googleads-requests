@@ -79,11 +79,12 @@ class SudsRequestBuilder(BatchJobHelper._SudsUploadRequestBuilder):
             has_suffix=is_last)
         # Determine length of this message and the required padding.
         new_content_length = current_content_length
-        request_length = len(request_body.encode('utf-8'))
+        request_data = request_body.encode('utf-8')
+        request_length = len(request_data)
         padding_length = self._GetPaddingLength(request_length)
         padded_request_length = request_length + padding_length
         new_content_length += padded_request_length
-        request_body += ' ' * padding_length
+        request_data += ' ' * padding_length
         content_range = 'bytes {0}-{1}/{2}'.format(
             current_content_length,
             new_content_length - 1,
@@ -94,7 +95,7 @@ class SudsRequestBuilder(BatchJobHelper._SudsUploadRequestBuilder):
             'Content-Length': padded_request_length,
             'Content-Range': content_range,
         }
-        request = requests.Request('PUT', upload_url, headers=headers, data=request_body)
+        request = requests.Request('PUT', upload_url, headers=headers, data=request_data)
         return request.prepare()
 
 
