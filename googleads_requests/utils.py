@@ -163,22 +163,18 @@ class AdwordsBatchJobHelper(BatchJobHelper):
 class AdwordsReportDownloader(ReportDownloader):
     chunk_size = 8192
 
-    def __init__(self, adwords_client, version):
-        super(AdwordsReportDownloader, self).__init__(adwords_client, version)
-        self._session = requests.Session()
-        if self._adwords_client.https_proxy:
-            self._session.proxies = {'https': self._adwords_client.https_proxy}
-        self._session.headers = {
-            'Content-type': DOWNLOADER_CONTENT_TYPE,
-            'developerToken': self._adwords_client.developer_token,
-            'User-Agent': '{0}_{1},gzip'.format(self._adwords_client.user_agent, LIB_SIGNATURE),
-        }
-
     def _post(self, post_body, kwargs, stream=False):
-        headers = self._adwords_client.oauth2_client.CreateHttpHeader()
-        headers['clientCustomerId'] = kwargs.get('client_customer_id', self._adwords_client.client_customer_id)
+        client = self._adwords_client
+        session = client.proxy_config.session
+        headers = client.oauth2_client.CreateHttpHeader()
+        headers.update({
+            'Content-type': DOWNLOADER_CONTENT_TYPE,
+            'developerToken': client.developer_token,
+            'clientCustomerId': kwargs.get('client_customer_id', client.client_customer_id),
+            'User-Agent': '{0}_{1},gzip'.format(client.user_agent, LIB_SIGNATURE),
+        })
         headers.update(get_report_headers(kwargs))
-        response = self._session.post(self._end_point, data=post_body, headers=headers, stream=stream)
+        response = session.post(self._end_point, data=post_body, headers=headers, stream=stream)
         if response.status_code >= 400 < 500:
             e = extract_report_error(response)
             response.close()

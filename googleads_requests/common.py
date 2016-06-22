@@ -40,3 +40,7 @@ class RequestsProxyConfig(ProxyConfig):
           requests transport.
         """
         return RequestsTransport(self._session)
+
+    @property
+    def session(self):
+        return self._session
