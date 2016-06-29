@@ -15,5 +15,5 @@ setup(
     license='MIT',
     author='Matthias Erll',
     author_email='matthias@precisdigital.com',
-    description='Requests implementations of Google AdWords client utilities.'
+    description='Python Requests for Google AdWords API client and utilities.'
 )
