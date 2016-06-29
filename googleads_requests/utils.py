@@ -142,7 +142,7 @@ class IncrementalUploadHelper(object):
         response = self._session.send(request)
         response.raise_for_status()
         # Update upload status.
-        self._current_content_length += len(response.data)
+        self._current_content_length += len(request.body)
         self._is_last = is_last
 
 
