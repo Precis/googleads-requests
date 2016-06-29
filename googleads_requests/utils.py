@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import requests
+from requests import Request
 import suds
 
 try:
@@ -97,7 +97,7 @@ class SudsRequestBuilder(BatchJobHelper._SudsUploadRequestBuilder):
             'Content-Length': padded_request_length,
             'Content-Range': content_range,
         }
-        request = requests.Request('PUT', upload_url, headers=headers, data=request_data)
+        request = Request('PUT', upload_url, headers=headers, data=request_data)
         return request.prepare()
 
 
@@ -105,7 +105,7 @@ class IncrementalUploadHelper(object):
     """
     A utility for uploading operations for a BatchJob incrementally.
 
-    :param request_builder: an AbstractUploadRequestBuilder instance.
+    :param request_builder: a SudsRequestBuilder instance.
     :param upload_url: a string url provided by the BatchJobService.
     :param current_content_length: an integer identifying the current content length
         of data uploaded to the Batch Job.
@@ -123,7 +123,7 @@ class IncrementalUploadHelper(object):
             raise GoogleAdsValueError(
                 "Current content length %s is < 0." % current_content_length)
         self._current_content_length = current_content_length
-        self._session = session = requests.Session()
+        self._session = session = request_builder.client.proxy_config.session
         if self._version < 'v201601' or current_content_length != 0:
             self._upload_url = upload_url
         else:
@@ -219,7 +219,8 @@ class DfpDataDownloader(DataDownloader):
     def DownloadReportToFile(self, report_job_id, export_format, outfile):
         service = self._GetReportService()
         report_url = service.getReportDownloadURL(report_job_id, export_format)
-        response = requests.get(report_url, stream=True)
+        session = self.proxy_config.session
+        response = session.get(report_url, stream=True)
         try:
             response.raise_for_status()
             for buf in response.iter_content(self.chunk_size):
