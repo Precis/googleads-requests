@@ -21,6 +21,7 @@ UPLOAD_URL_INIT_HEADERS = {
     'Content-Length': 0,
     'x-goog-resumable': 'start'
 }
+LATEST_VERSION = sorted(_SERVICE_MAP.keys())[-1]
 
 
 def get_report_headers(kwargs):
@@ -50,7 +51,7 @@ def extract_report_error(response):
     return AdWordsReportError(response.status_code, response, content)
 
 
-def get_batch_job_helper(client, version=sorted(_SERVICE_MAP.keys())[-1], server=_DEFAULT_ENDPOINT):
+def get_batch_job_helper(client, version=LATEST_VERSION, server=_DEFAULT_ENDPOINT):
     request_builder = AdwordsBatchJobHelper.GetRequestBuilder(client=client, version=version, server=server)
     response_parser = AdwordsBatchJobHelper.GetResponseParser()
     return AdwordsBatchJobHelper(request_builder, response_parser, version=version)
@@ -115,7 +116,7 @@ class IncrementalUploadHelper(object):
     :raises GoogleAdsValueError: if the content length is lower than 0.
     """
     def __init__(self, request_builder, upload_url, current_content_length=0,
-                 is_last=False, version=sorted(_SERVICE_MAP.keys())[-1]):
+                 is_last=False, version=LATEST_VERSION):
         self._version = version
         self._request_builder = request_builder
         if current_content_length < 0:
