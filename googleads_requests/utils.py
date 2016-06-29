@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from requests import Request
 import suds
+import xmltodict
 
 try:
     from xml.etree import cElementTree as ET
@@ -101,6 +102,11 @@ class SudsRequestBuilder(BatchJobHelper._SudsUploadRequestBuilder):
         return request.prepare()
 
 
+class XMLResultParser(BatchJobHelper.AbstractResponseParser):
+    def ParseResponse(self, batch_job_response):
+        return xmltodict.parse(batch_job_response, force_list=('rval', ))
+
+
 class IncrementalUploadHelper(object):
     """
     A utility for uploading operations for a BatchJob incrementally.
@@ -154,6 +160,10 @@ class AdwordsBatchJobHelper(BatchJobHelper):
     @classmethod
     def GetRequestBuilder(cls, **kwargs):
         return SudsRequestBuilder(**kwargs)
+
+    @classmethod
+    def GetResponseParser(cls, **kwargs):
+        return XMLResultParser(**kwargs)
 
     def UploadOperations(self, upload_url, *operations):
         uploader = IncrementalUploadHelper(self._request_builder, upload_url,
