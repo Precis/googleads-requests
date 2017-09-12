@@ -9,7 +9,7 @@ setup(
     version=__version__,
     packages=find_packages(),
     # suds_requests cannot be added here, as it refers to suds, conflicting with suds-jurko
-    install_requires=['requests', 'googleads>=4.2.0'],
+    install_requires=['requests', 'googleads>=7.0.0'],
     dependency_links=['git+https://github.com/Precis/googleads-python-lib.git@precis-2#egg=googleads-precis'],
     url='https://github.com/Precis/googleads-requests',
     license='MIT',

@@ -130,7 +130,7 @@ class IncrementalUploadHelper(object):
                 "Current content length %s is < 0." % current_content_length)
         self._current_content_length = current_content_length
         self._session = session = request_builder.client.proxy_config.session
-        if self._version < 'v201601' or current_content_length != 0:
+        if current_content_length != 0:
             self._upload_url = upload_url
         else:
             response = session.post(upload_url, headers=UPLOAD_URL_INIT_HEADERS)
@@ -138,7 +138,7 @@ class IncrementalUploadHelper(object):
         self._is_last = is_last
 
     def UploadOperations(self, operations, is_last=False):
-        if self._is_last is True:
+        if self._is_last:
             raise AdWordsBatchJobServiceInvalidOperationError(
                 "Can't add new operations to a completed incremental upload.")
         # Build the request
@@ -181,7 +181,7 @@ class AdwordsReportDownloader(ReportDownloader):
         headers.update({
             'Content-type': DOWNLOADER_CONTENT_TYPE,
             'developerToken': client.developer_token,
-            'User-Agent': '{0}_{1},gzip'.format(client.user_agent, LIB_SIGNATURE),
+            'User-Agent': '{0}{1},gzip'.format(client.user_agent, LIB_SIGNATURE),
         })
         report_kwargs = client.report_download_headers.copy()
         report_kwargs.update(kwargs)
@@ -226,9 +226,19 @@ class AdwordsReportDownloader(ReportDownloader):
 class DfpDataDownloader(DataDownloader):
     chunk_size = 8192
 
-    def DownloadReportToFile(self, report_job_id, export_format, outfile):
+    def DownloadReportToFile(self, report_job_id, export_format, outfile,
+                             include_report_properties=False,
+                             include_totals_row=None, use_gzip_compression=True):
         service = self._GetReportService()
-        report_url = service.getReportDownloadURL(report_job_id, export_format)
+        if include_totals_row is None:  # True unless CSV export if not specified
+            include_totals_row = True if export_format != 'CSV_DUMP' else False
+        opts = {
+            'exportFormat': export_format,
+            'includeReportProperties': include_report_properties,
+            'includeTotalsRow': include_totals_row,
+            'useGzipCompression': use_gzip_compression
+        }
+        report_url = service.getReportDownloadUrlWithOptions(report_job_id, opts)
         session = self.proxy_config.session
         response = session.get(report_url, stream=True)
         try:
